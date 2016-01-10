@@ -1,6 +1,20 @@
 {
 	"require": {
-        "slim/slim": "2.*"
-    }
+        "slim/slim": "2.*",
+        "guzzlehttp/guzzle": "~4.0",
+        "thinkpark/notorm": "*"
+    },
+    "autoload": {
+	    "psr-4": {
+	    	"app\\": "src/",
+	    	"app\\tests\\": "tests/"
+    	}
+    },
+    "repositories": {
+		"packagist": { 
+			"url": "https://packagist.org", 
+			"type": "composer" 
+		}
+	}
 
 }
