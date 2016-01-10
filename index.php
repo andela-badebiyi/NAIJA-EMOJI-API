@@ -3,7 +3,17 @@
 require "vendor/autoload.php";
 
 //initialize db handlers;
-$pdo = new PDO('sqlite:test.db');
+
+$db_config = parse_ini_file('config.ini');
+
+$dsn = ($db_config['db_location'] == 'remote') ? "pgsql:host=".$db_config['host'].";port=".$db_config['port'].";dbname=".$db_config['db'].";user=".$db_config['user'].";password=".$db_config['pword'] : 'sqlite:test.db';
+
+try {
+    $pdo = new PDO($dsn);
+} catch (PDOException $e) {
+    $pdo = new PDO('sqlite:test.db');
+}
+	
 $db = new NotORM($pdo);
 
 //initialize slim
