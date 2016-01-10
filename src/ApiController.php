@@ -155,7 +155,7 @@ class ApiController {
 
 	/**
 	 * Controller action that processes the request made to the create emoji endpoint
-	 * @return json 
+	 * @return closure outputs a status message and emoji created in json format
 	 */
 	public function createEmoji()
 	{
@@ -191,7 +191,10 @@ class ApiController {
 		};
 	}
 
-	//update an emoji via put/patch request
+	/**
+	 * Controller action that processes the request made to the update endpoint via either put or patch
+	 * @return closure outputs a status message 
+	 */
 	public function updateEmoji()
 	{ 
 		return function($id)
@@ -218,7 +221,10 @@ class ApiController {
 		};
 	}
 
-	//delete an emoji via the delete request
+	/**
+	 * Controller action that processes the request made to the delete endpoint
+	 * @return closure outputs a status message
+	 */
 	public function deleteEmoji()
 	{ 
 		return function($id)
@@ -235,12 +241,24 @@ class ApiController {
 		};
 	}
 
-	//private functions
+	/**
+	 * Generates a token for every login session
+	 * @param  string $txtToEnc  text to be encrypted
+	 * @param  string $encMethod the encryption method 
+	 * @param  string $secHash   the secret hash
+	 * @param  bytes $iv         the initializing vector used during encryption
+	 * @return string the token that has been generated
+	 */
 	private function generate_token($txtToEnc, $encMethod, $secHash, $iv)
 	{
 		return openssl_encrypt($txtToEnc, $encMethod, $secHash, 0, $iv);
 	}
-
+    
+	/**
+	 * Checks whether a token exists and has not expired
+	 * @param  string $token user token
+	 * @return boolean  true if token is valid and false if it isn't
+	 */
 	private function token_is_valid($token) 
 	{	
 		//check that token exists in database then check if it has expired
@@ -257,7 +275,12 @@ class ApiController {
 			return (intval($current_time) - 86400) < $time_token_generated ? true : false;
 		}
 	}
-
+    
+	/**
+	 * Fetches the current time
+	 * @param  string [$format = null] the format in which the time should be returned in
+	 * @return string the time 
+	 */
 	private function get_current_time($format = null) 
 	{
 		$date = new \DateTime();
@@ -265,12 +288,23 @@ class ApiController {
 		return $result;
 	}
 
+	/**
+	 * Fetches the username of the current token
+	 * @param  string $token user token
+	 * @return string [username linked to the supplied user_token
+	 */
 	private function get_username($token)
 	{
 		$user = $this->db->users('token = ?', $token)->fetch();
 		return $user['username'];
 	}
 
+	/**
+	 * Checks if the user is the owner of an emoji
+	 * @param  string $token    User token
+	 * @param  int $emoji_id the id of the emoji whose ownership we want to confirm
+	 * @return boolean returns true if user does own the emoji and false if he doesn't
+	 */
 	private function user_owns_emoji($token, $emoji_id)
 	{
 		//fetch username of the current logged in user
@@ -283,7 +317,12 @@ class ApiController {
 		return $user == $emoji['created_by'] ? true : false;
 
 	}
-
+    
+	/**
+	 * Check if an emmoji exists
+	 * @param  int $emoji_id id of the emoji whose existence we want to confirm
+	 * @return Boolean returns true if emoji exists and false if it doesn't
+	 */
 	private function emoji_exists($emoji_id)
 	{
 		return $this->db->emoji("id = ?", $emoji_id)->fetch() == null ? false : true;
