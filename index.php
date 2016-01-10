@@ -44,6 +44,10 @@ $app->patch('/emojis/:id/',$action->updateEmoji());
 //delete an emoji
 $app->delete('/emojis/:id/',$action->deleteEmoji());
 
+//index page 
+$app->get('/', function() {
+   echo "Welcome to the naija emoji api homepage";
+});
 //run $app
 $app->run();
 
