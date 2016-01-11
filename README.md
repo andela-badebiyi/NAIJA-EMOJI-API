@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/andela-badebiyi/checkpoint-3.svg?branch=develop)](https://travis-ci.org/andela-badebiyi/checkpoint-3)
 <a href="https://styleci.io/repos/49193992"><img src="https://styleci.io/repos/49193992/shield" alt="StyleCI"></a>
+[![Coverage Status](https://coveralls.io/repos/andela-badebiyi/checkpoint-3/badge.svg?branch=master&service=github)](https://coveralls.io/github/andela-badebiyi/checkpoint-3?branch=master)
 
 # Checkpoint-3 (Naija Emoji API)
 ##Summary
