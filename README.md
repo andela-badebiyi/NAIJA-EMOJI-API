@@ -56,7 +56,7 @@ curl -i -X DELETE -H 'Content-Type: application/json; user-token: user_token' ht
 ```
 
 **Fetch All Emojis**
-Send a `get` request to `http://bd-naijaemoji.herokuapp.com/emojis/`
+Send a `get` request to `http://bd-naijaemoji.herokuapp.com/emojis`
 ```
 curl -i -X GET -H 'Content-Type: application/json' http://bd-naijaemoji.herokuapp.com/emojis/
 ```
