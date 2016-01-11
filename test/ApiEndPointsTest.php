@@ -1,243 +1,241 @@
 <?php
+
 namespace app\tests;
 
 use GuzzleHttp\Client;
 
 class ApiEndPointsTest extends \PHPUnit_Framework_TestCase
 {
-	public $client;
+    public $client;
 
-	public function setUp()
-	{
-		$this->client = new Client(['base_url' => 'http://localhost:3000/']);
-	}
+    public function setUp()
+    {
+        $this->client = new Client(['base_url' => 'http://bd-naijaemoji.herokuapp.com/']);
+    }
 
-	public function testValidConnection()
-	{
-		$this->assertNotNull($this->client);
-		$this->assertInstanceOf('GuzzleHttp\Client', $this->client);
-	}
+    public function testValidConnection()
+    {
+        $this->assertNotNull($this->client);
+        $this->assertInstanceOf('GuzzleHttp\Client', $this->client);
+    }
 
-	public function testAuthLogin()
-	{
-		//test login with invalid username and password
-		$response = $this->client->post('auth/login', [
-			'body' => [
-					'username' => 'invalid_username',
-					'password' => 'invalid_password'
-				],
-			'exceptions' => false
-		]);
-		
-		//confirm the error code and the error message
-		$this->assertEquals(401, $response->getStatusCode());
-		$this->assertEquals('Invalid username and/or password', $response->json()['message']);
+    public function testAuthLogin()
+    {
+        //test login with invalid username and password
+        $response = $this->client->post('auth/login', [
+            'body' => [
+                    'username' => 'invalid_username',
+                    'password' => 'invalid_password',
+                ],
+            'exceptions' => false,
+        ]);
 
-		//test login endpoint with valid username and password
-		$response = $this->client->post('auth/login', [
-			'body' => [
-					'username' => 'admin',
-					'password' => 'pass1234'
-				],
-			'exceptions' => false
-		]);
+        //confirm the error code and the error message
+        $this->assertEquals(401, $response->getStatusCode());
+        $this->assertEquals('Invalid username and/or password', $response->json()['message']);
 
-		//confirm the error code and that token is returned
-		$this->assertEquals(200, $response->getStatusCode());
-		$this->assertNotEmpty($response->json()['token']);
+        //test login endpoint with valid username and password
+        $response = $this->client->post('auth/login', [
+            'body' => [
+                    'username' => 'admin',
+                    'password' => 'pass1234',
+                ],
+            'exceptions' => false,
+        ]);
 
-		//pass token to the authlogout test
-		return $response->json()['token'];
-	}
+        //confirm the error code and that token is returned
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertNotEmpty($response->json()['token']);
 
-	/**
-	 * @depends testAuthLogin
-	 */
-	public function testAuthLogout($token)
-	{
-		//log a user out with an invalid token
-		$response = $this->client->get('auth/logout', [
-			'headers' => [
-				'user-token' => 'invalid token'
-			],
-			'exceptions' => false
-		]);
+        //pass token to the authlogout test
+        return $response->json()['token'];
+    }
 
-		$this->assertEquals(401, $response->getStatusCode());
-		$this->assertEquals('Invalid Token', $response->json()['message']);
+    /**
+     * @depends testAuthLogin
+     */
+    public function testAuthLogout($token)
+    {
+        //log a user out with an invalid token
+        $response = $this->client->get('auth/logout', [
+            'headers' => [
+                'user-token' => 'invalid token',
+            ],
+            'exceptions' => false,
+        ]);
 
-		//log a user out with a valid token		
-		$response = $this->client->get('auth/logout', [
-			'headers' => [
-				'user-token' => $token
-			],
-			'exceptions' => false
-		]);
+        $this->assertEquals(401, $response->getStatusCode());
+        $this->assertEquals('Invalid Token', $response->json()['message']);
 
-		$this->assertEquals(200, $response->getStatusCode());
-		$this->assertEquals('Logged out!', $response->json()['message']);
-	}
+        //log a user out with a valid token
+        $response = $this->client->get('auth/logout', [
+            'headers' => [
+                'user-token' => $token,
+            ],
+            'exceptions' => false,
+        ]);
 
-	public function testFetchAllEmojis()
-	{
-		//connect to app and send a request to fetch all emojis
-		$response = $this->client->get('emojis');
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('Logged out!', $response->json()['message']);
+    }
 
-		$this->assertInternalType('array', $response->json()['emojis']);
+    public function testFetchAllEmojis()
+    {
+        //connect to app and send a request to fetch all emojis
+        $response = $this->client->get('emojis');
 
-	}
+        $this->assertInternalType('array', $response->json()['emojis']);
+    }
 
-	public function testFetchEmojiById()
-	{
-		//fetch an emoji that isnt in the database
-		$response = $this->client->get('emojis/30000');
-		$this->assertEquals(204, $response->getStatusCode());
+    public function testFetchEmojiById()
+    {
+        //fetch an emoji that isnt in the database
+        $response = $this->client->get('emojis/30000');
+        $this->assertEquals(204, $response->getStatusCode());
 
-		//fetch an emoji that is in the database
-		$response = $this->client->get('emojis/1');
-		$this->assertEquals(200, $response->getStatusCode());
-		$this->assertNotEmpty($response->json());
-		$this->assertInternalType('array', $response->json());
-	}
+        //fetch an emoji that is in the database
+        $response = $this->client->get('emojis/1');
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertNotEmpty($response->json());
+        $this->assertInternalType('array', $response->json());
+    }
 
-	public function testCreateEmoji()
-	{
-		//log user in and get a valid token
-		$token = $this->log_user_in();
+    public function testCreateEmoji()
+    {
+        //log user in and get a valid token
+        $token = $this->log_user_in();
 
-		//create emoji with an incorrect token
-		$response = $this->client->post('emojis', [
-			'headers' => [ 'user-token' => 'invalid_token'],
-			'body' => [
-				'name' => 'love_smiley',
-				'smiley' => 'link_to_image',
-				'category' => 'people',
-				'keywords' => 'love, emotion, mushy, sappy, awwnnn',
-			],
-			'exceptions' => false
-		]);
+        //create emoji with an incorrect token
+        $response = $this->client->post('emojis', [
+            'headers' => ['user-token' => 'invalid_token'],
+            'body'    => [
+                'name'     => 'love_smiley',
+                'smiley'   => 'link_to_image',
+                'category' => 'people',
+                'keywords' => 'love, emotion, mushy, sappy, awwnnn',
+            ],
+            'exceptions' => false,
+        ]);
 
-		$this->assertEquals(401, $response->getStatusCode());
-		$this->assertEquals('Invalid Token!', $response->json()['message']);
+        $this->assertEquals(401, $response->getStatusCode());
+        $this->assertEquals('Invalid Token!', $response->json()['message']);
 
-		//create emoji with a correct token
-		$response = $this->client->post('emojis', [
-			'headers' => ['user-token' => $token],
-			'body' => [
-				'name' => 'love_smiley',
-				'smiley' => 'link_to_image',
-				'category' => 'people',
-				'keywords' => 'love, emotion, mushy, sappy, awwnnn',
-			],
-			'exceptions' => false
-		]);
+        //create emoji with a correct token
+        $response = $this->client->post('emojis', [
+            'headers' => ['user-token' => $token],
+            'body'    => [
+                'name'     => 'love_smiley',
+                'smiley'   => 'link_to_image',
+                'category' => 'people',
+                'keywords' => 'love, emotion, mushy, sappy, awwnnn',
+            ],
+            'exceptions' => false,
+        ]);
 
-		$this->assertEquals(200, $response->getStatusCode());
-		$this->assertEquals('Emoji successfully added!', $response->json()['message']);
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('Emoji successfully added!', $response->json()['message']);
 
-		//log user out
-		$this->log_user_out($token);
+        //log user out
+        $this->log_user_out($token);
 
-		return $response->json()['emoji'];
-	}
+        return $response->json()['emoji'];
+    }
 
-	/**
-	 * @depends testCreateEmoji
-	 */
-	public function testUpdateEmoji($emoji)
-	{
-		//log user in and get a valid token
-		$token = $this->log_user_in();
+    /**
+     * @depends testCreateEmoji
+     */
+    public function testUpdateEmoji($emoji)
+    {
+        //log user in and get a valid token
+        $token = $this->log_user_in();
 
-		$new_name = "new_name_for_smiley";
-	
-		//try to update with invalid token
-		$response = $this->client->put('emojis/'.$emoji['id'], [
-			'headers' => ['user-token' => 'invalid_token'],
-			'body' => ['name' => $new_name],
-			'exceptions' => false
-		]);
+        $new_name = 'new_name_for_smiley';
 
-		$this->assertEquals(401, $response->getStatusCode());
+        //try to update with invalid token
+        $response = $this->client->put('emojis/'.$emoji['id'], [
+            'headers'    => ['user-token' => 'invalid_token'],
+            'body'       => ['name' => $new_name],
+            'exceptions' => false,
+        ]);
 
-		//update the name of the emoji via put request
-		$response = $this->client->put('emojis/'.$emoji['id'], [
-			'headers' => ['user-token' => $token],
-			'body' => ['name' => $new_name],
-			'exceptions' => false
-		]);	
+        $this->assertEquals(401, $response->getStatusCode());
 
-		//fetch emoji and check if it updated correctly
-		$fetched_emoji = $this->client->get('emojis/'.$emoji['id'])->json();
-		$this->assertEquals($response->getStatusCode(), 200);
-		$this->assertEquals($new_name, $fetched_emoji['name']);
+        //update the name of the emoji via put request
+        $response = $this->client->put('emojis/'.$emoji['id'], [
+            'headers'    => ['user-token' => $token],
+            'body'       => ['name' => $new_name],
+            'exceptions' => false,
+        ]);
 
-		//update the name of the emoji via a patch request
-		$response = $this->client->patch('emojis/'.$emoji['id'], [
-			'headers' => ['user-token' => $token],
-			'body' => ['name' => $new_name],
-			'exceptions' => false
-		]);	
+        //fetch emoji and check if it updated correctly
+        $fetched_emoji = $this->client->get('emojis/'.$emoji['id'])->json();
+        $this->assertEquals($response->getStatusCode(), 200);
+        $this->assertEquals($new_name, $fetched_emoji['name']);
 
-		//fetch emoji and check if it updated correctly
-		$fetched_emoji = $this->client->get('emojis/'.$emoji['id'])->json();
-		$this->assertEquals($response->getStatusCode(), 200);
-		$this->assertEquals($new_name, $fetched_emoji['name']);
+        //update the name of the emoji via a patch request
+        $response = $this->client->patch('emojis/'.$emoji['id'], [
+            'headers'    => ['user-token' => $token],
+            'body'       => ['name' => $new_name],
+            'exceptions' => false,
+        ]);
 
-		//log user out
-		$this->log_user_out($token);
+        //fetch emoji and check if it updated correctly
+        $fetched_emoji = $this->client->get('emojis/'.$emoji['id'])->json();
+        $this->assertEquals($response->getStatusCode(), 200);
+        $this->assertEquals($new_name, $fetched_emoji['name']);
 
-		return $fetched_emoji;
+        //log user out
+        $this->log_user_out($token);
 
-	}
+        return $fetched_emoji;
+    }
 
-	/**
-	 * @depends testUpdateEmoji
-	 */
+    /**
+     * @depends testUpdateEmoji
+     */
+    public function testDeleteEmoji($emoji)
+    {
+        $token = $this->log_user_in();
 
-	public function testDeleteEmoji($emoji)
-	{
-		$token = $this->log_user_in();
+        //try to delete with invalid token
+        $response = $this->client->delete('emojis/'.$emoji['id'], [
+            'headers'    => ['user-token' => 'invalid_token'],
+            'exceptions' => false,
+        ]);
 
-		//try to delete with invalid token
-		$response = $this->client->delete('emojis/'.$emoji['id'], [
-			'headers' => ['user-token' => 'invalid_token'],
-			'exceptions' => false
-		]);
+        $this->assertEquals(401, $response->getStatusCode());
 
-		$this->assertEquals(401, $response->getStatusCode());
+        //delete user with a valid token
+        $response = $this->client->delete('emojis/'.$emoji['id'], [
+            'headers'    => ['user-token' => $token],
+            'exceptions' => false,
+        ]);
 
-		//delete user with a valid token
-		$response = $this->client->delete('emojis/'.$emoji['id'], [
-			'headers' => ['user-token' => $token],
-			'exceptions' => false
-		]);		
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('successfully Deleted!', $response->json()['message']);
+    }
 
-		$this->assertEquals(200, $response->getStatusCode());
-		$this->assertEquals('successfully Deleted!', $response->json()['message']);
-	}
+    private function log_user_in()
+    {
+        $response = $this->client->post('auth/login', [
+            'body' => [
+                    'username' => 'admin',
+                    'password' => 'pass1234',
+                ],
+            'exceptions' => false,
+        ]);
 
-	private function log_user_in()
-	{
-		$response = $this->client->post('auth/login', [
-			'body' => [
-					'username' => 'admin',
-					'password' => 'pass1234'
-				],
-			'exceptions' => false
-		]);
-		return $response->json()['token'];
-	}
+        return $response->json()['token'];
+    }
 
-	private function log_user_out($token)
-	{
-		//log a user out with a valid token		
-		$response = $this->client->get('auth/logout', [
-			'headers' => [
-				'user-token' => $token
-			],
-			'exceptions' => false
-		]);		
-	}
-
+    private function log_user_out($token)
+    {
+        //log a user out with a valid token
+        $response = $this->client->get('auth/logout', [
+            'headers' => [
+                'user-token' => $token,
+            ],
+            'exceptions' => false,
+        ]);
+    }
 }

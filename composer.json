@@ -1,8 +1,12 @@
 {
 	"require": {
         "slim/slim": "2.*",
-        "guzzlehttp/guzzle": "~4.0",
         "thinkpark/notorm": "*"
+    },
+    "require-dev": {
+    	"phpunit/phpunit":"^4.8",
+        "satooshi/php-coveralls": "^1.0",
+        "guzzlehttp/guzzle": "~4.0"
     },
     "autoload": {
 	    "psr-4": {

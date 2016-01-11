@@ -1,0 +1,18 @@
+language: php
+php:
+  - 5.6
+
+before_install:
+  - composer install
+ 
+script:
+  - mkdir -p build/logs
+  - phpunit --coverage-clover build/logs/clover.xml
+ 
+after_script:
+  - php vendor/bin/coveralls -v
+
+install:
+  - travis_retry composer self-update && composer --version
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+  - travis_retry composer install --prefer-dist --no-interaction
