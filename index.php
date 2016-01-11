@@ -6,14 +6,14 @@ require "vendor/autoload.php";
 
 $db_config = parse_ini_file('config.ini');
 
-$dsn = ($db_config['db_location'] == 'remote') ? "pgsql:host=".$db_config['host'].";port=".$db_config['port'].";dbname=".$db_config['db'].";user=".$db_config['user'].";password=".$db_config['pword'] : 'sqlite:test.db';
+$dsn = ($db_config['db_location'] == 'remote') ? 
+"pgsql:host=".$db_config['host'].
+";dbname=".$db_config['db'].
+";user=". $db_config['user'].
+";password=".$db_config['pword'] : 'sqlite:test.db';
+$pdo = new PDO($dsn);
+$pdo->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-try {
-    $pdo = new PDO($dsn);
-} catch (PDOException $e) {
-    $pdo = new PDO('sqlite:test.db');
-}
-	
 $db = new NotORM($pdo);
 
 //initialize slim

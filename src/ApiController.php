@@ -68,7 +68,8 @@ class ApiController {
 				);
 
 				//insert token, token timestamp and initializing vector into database
-				$res->update(['token' => $token, 'token_generated' => $timestamp, 'iv' => $this->iv]);
+				//$res->update(['token' => $token, 'token_generated' => $timestamp, 'iv' => $this->iv]);
+				$res->update(['token_generated' => $timestamp, 'token' => $token]);
 
 				echo json_encode(['token' => $token]);
 			}
@@ -177,12 +178,13 @@ class ApiController {
 				$all_post_vars['created_by'] = $this->get_username($token);
 				
 				//insert record 
-				$emoji->insert($all_post_vars);
+				$res = $emoji->insert($all_post_vars);
+				$timestamp = $res['date_created'];
 
-				//return result of this request operation and the inserted emoji object
+				//return result of this request operation and the inserted emoji
 				echo json_encode([
 					'message' => 'Emoji successfully added!', 
-					'emoji' => $emoji->where('id = ?', $emoji->insert_id())->fetch()
+					'emoji' => $emoji->where('date_created = ?', $timestamp)->fetch()
 					]);
 			} else {
 					$this->app->response->setStatus(401);
