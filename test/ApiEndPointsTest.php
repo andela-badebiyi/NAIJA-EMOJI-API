@@ -10,7 +10,7 @@ class ApiEndPointsTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->client = new Client(['base_url' => 'http://localhost:3000/']);
+        $this->client = new Client(['base_url' => 'http://bd-naijaemoji.herokuapp.com/']);
     }
 
     public function testValidConnection()
