@@ -245,7 +245,7 @@ class ApiController
      */
     private function generate_token($txtToEnc)
     {
-        return openssl_encrypt($txtToEnc, $_ENV['encryptionMethod'], $_ENV['secret_hash'], 0, $_ENV['iv']);
+        return openssl_encrypt($txtToEnc, \getenv('encryptionMethod'), \getenv('secret_hash'), 0, \getenv('iv'));
     }
 
     /**
