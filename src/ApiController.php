@@ -18,8 +18,8 @@ class ApiController
     /**
      * Initializes the slim app object and the Db object.
      *
-     * @param Slim   $app       slim object that handles request and response made to and from the api
-     * @param NotOrm $db        orm object used to interact with the database
+     * @param Slim   $app slim object that handles request and response made to and from the api
+     * @param NotOrm $db  orm object used to interact with the database
      */
     public function __construct($app, $db)
     {
