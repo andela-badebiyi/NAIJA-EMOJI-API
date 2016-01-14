@@ -15,27 +15,16 @@ class ApiController
     private $app;
     private $db;
 
-    //parameters required for the token generation
-    private $secret_hash;
-    private $encryptionMethod;
-    private $iv;
-
     /**
      * Initializes the slim app object and the Db object.
      *
      * @param Slim   $app       slim object that handles request and response made to and from the api
      * @param NotOrm $db        orm object used to interact with the database
-     * @param string $secHash   secret hash key used in generating token with php open_ssl_encryption
-     * @param string $encMethod encryption method used by the open_ssl_encryption method
-     * @param string $iv        initializing vector used during encryptio
      */
-    public function __construct($app, $db, $secHash, $encMethod, $iv)
+    public function __construct($app, $db)
     {
         $this->app = $app;
         $this->db = $db;
-        $this->secret_hash = $secHash;
-        $this->encryptionMethod = $encMethod;
-        $this->iv = $iv;
     }
 
     /**
@@ -66,12 +55,9 @@ class ApiController
                 $timestamp = $this->get_current_time();
 
                 $textToEncrypt = $username.'-'.$password.'-'.$timestamp;
-                $token = $this->generate_token(
-                    $textToEncrypt, $this->encryptionMethod, $this->secret_hash, $this->iv
-                );
+                $token = $this->generate_token($textToEncrypt);
 
-                //insert token, token timestamp and initializing vector into database
-                //$res->update(['token' => $token, 'token_generated' => $timestamp, 'iv' => $this->iv]);
+                //insert token and time it was generated into database
                 $res->update(['token_generated' => $timestamp, 'token' => $token]);
 
                 echo json_encode(['token' => $token]);
@@ -99,7 +85,7 @@ class ApiController
                 $user_data = $this->db->users('token = ?', $token)->fetch();
                 $expired_timestamp = intval($user_data['token_generated']) - 86400;
 
-                //update user with expired timestamp
+                //insert expired token in the users table
                 $user = $this->db->users()->where('token = ?', $token);
                 $user->update(['token_generated' => $expired_timestamp]);
 
@@ -257,9 +243,9 @@ class ApiController
      *
      * @return string the token that has been generated
      */
-    private function generate_token($txtToEnc, $encMethod, $secHash, $iv)
+    private function generate_token($txtToEnc)
     {
-        return openssl_encrypt($txtToEnc, $encMethod, $secHash, 0, $iv);
+        return openssl_encrypt($txtToEnc, $_ENV['encryptionMethod'], $_ENV['secret_hash'], 0, $_ENV['iv']);
     }
 
     /**

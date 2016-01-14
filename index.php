@@ -19,15 +19,17 @@ $db = new NotORM($pdo);
 //initialize slim
 $app = new Slim\Slim();
 
-//secret hash key and the encryption method
+//set secret hash key, encryption method and intializing vector as environment variables
 $secret_hash = '123ophiophagus!@#';
 $encryptionMethod = 'AES-256-CBC';
-
-//initializing vector;
 $iv = openssl_random_pseudo_bytes(16);
 
+putenv("secret_hash=$secret_hash");
+putenv("encryptionMethod=$encryptionMethod");
+putenv("iv=$iv");
+
 //instantiate the appAction Object that processes our requests
-$action = new app\ApiController($app, $db, $secret_hash, $encryptionMethod, $iv);
+$action = new app\ApiController($app, $db);
 
 //log the user in
 $app->post('/auth/login', $action->authLogin());
