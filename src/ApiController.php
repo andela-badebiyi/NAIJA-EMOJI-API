@@ -2,6 +2,8 @@
 
 namespace app;
 
+use app\authorization\Token;
+
 /**
  * ApiController class that resolves request made to each endpoint of the api
  * Each public method in this class handles the request made to each endpoint in the api
@@ -55,7 +57,7 @@ class ApiController
                 $timestamp = $this->get_current_time();
 
                 $textToEncrypt = $username.'-'.$password.'-'.$timestamp;
-                $token = $this->generate_token($textToEncrypt);
+                $token = Token::generate($textToEncrypt);
 
                 //insert token and time it was generated into database
                 $res->update(['token_generated' => $timestamp, 'token' => $token]);
@@ -78,7 +80,7 @@ class ApiController
             $token = $this->app->request->headers->get('user-token');
 
             //check if token is valid and then proceed to process request
-            if ($this->token_is_valid($token)) {
+            if (Token::isValid($token, $this->db)) {
                 $this->app->response->setStatus(200);
 
                 //get token and invalidate it by making it older than a day
@@ -160,12 +162,12 @@ class ApiController
             $emoji = $this->db->emoji();
 
             //check if token is valid then proceed or return an error message
-            if ($this->token_is_valid($token)) {
+            if (Token::isValid($token, $this->db)) {
                 //get post data and make some additions
                 $all_post_vars = $this->app->request->post();
                 $all_post_vars['date_created'] = $this->get_current_time('Y-m-d H:i:s');
                 $all_post_vars['date_modified'] = $this->get_current_time('Y-m-d H:i:s');
-                $all_post_vars['created_by'] = $this->get_username($token);
+                $all_post_vars['created_by'] = Token::owner($token, $this->db);
 
                 //insert record
                 $res = $emoji->insert($all_post_vars);
@@ -194,7 +196,7 @@ class ApiController
             $this->app->response->headers->set('Content-Type', 'application/json');
             $token = $this->app->request->headers->get('user-token');
 
-            if ($this->token_is_valid($token) && $this->user_owns_emoji($token, $id) && $this->emoji_exists($id)) {
+            if (Token::isValid($token, $this->db) && $this->user_owns_emoji($token, $id) && $this->emoji_exists($id)) {
                 $all_post_vars = $this->app->request->post();
                 $all_post_vars['date_modified'] = $this->get_current_time('Y-m-d H:i:s');
 
@@ -223,7 +225,7 @@ class ApiController
         return function ($id) {
             $this->app->response->headers->set('Content-Type', 'application/json');
             $token = $this->app->request->headers->get('user-token');
-            if ($this->token_is_valid($token) && $this->user_owns_emoji($token, $id) && $this->emoji_exists($id)) {
+            if (Token::isValid($token, $this->db) && $this->user_owns_emoji($token, $id) && $this->emoji_exists($id)) {
                 $this->db->emoji('id = ?', $id)->delete();
                 echo json_encode(['message' => 'successfully Deleted!']);
             } else {
@@ -231,45 +233,6 @@ class ApiController
                 echo json_encode(['message' => 'Oops something went wrong!']);
             }
         };
-    }
-
-    /**
-     * Generates a token for every login session.
-     *
-     * @param string $txtToEnc  text to be encrypted
-     * @param string $encMethod the encryption method 
-     * @param string $secHash   the secret hash
-     * @param bytes  $iv        the initializing vector used during encryption
-     *
-     * @return string the token that has been generated
-     */
-    private function generate_token($txtToEnc)
-    {
-        return openssl_encrypt($txtToEnc, \getenv('encryptionMethod'), \getenv('secret_hash'), 0, \getenv('iv'));
-    }
-
-    /**
-     * Checks whether a token exists and has not expired.
-     *
-     * @param string $token user token
-     *
-     * @return bool true if token is valid and false if it isn't
-     */
-    private function token_is_valid($token)
-    {
-        //check that token exists in database then check if it has expired
-        $result = $this->db->users->where('token = ?', $token);
-        if (count($result) == 0) {
-            return false;
-        } else {
-            //get current time and the time token was generated
-            $current_time = $this->get_current_time();
-            $user = $this->db->users('token = ?', $token)->fetch();
-            $time_token_generated = $user['token_generated'];
-
-            //if token is more than a day old return false if not return true
-            return (intval($current_time) - 86400) < $time_token_generated ? true : false;
-        }
     }
 
     /**
@@ -288,20 +251,6 @@ class ApiController
     }
 
     /**
-     * Fetches the username of the current token.
-     *
-     * @param string $token user token
-     *
-     * @return string [username linked to the supplied user_token
-     */
-    private function get_username($token)
-    {
-        $user = $this->db->users('token = ?', $token)->fetch();
-
-        return $user['username'];
-    }
-
-    /**
      * Checks if the user is the owner of an emoji.
      *
      * @param string $token    User token
@@ -312,7 +261,7 @@ class ApiController
     private function user_owns_emoji($token, $emoji_id)
     {
         //fetch username of the current logged in user
-        $user = $this->get_username($token);
+        $user = Token::owner($token, $this->db);
 
         //fetch emoji data
         $emoji = $this->db->emoji('id = ?', $emoji_id)->fetch();

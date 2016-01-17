@@ -11,6 +11,7 @@
     "autoload": {
 	    "psr-4": {
 	    	"app\\": "src/",
+            "app\\authorization\\": "authorization/",
 	    	"app\\tests\\": "tests/"
     	}
     },
