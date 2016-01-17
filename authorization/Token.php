@@ -1,11 +1,13 @@
 <?php
+
 namespace app\authorization;
 
-class Token {
-	/**
+class Token
+{
+    /**
      * Generates a token for every login session.
      *
-     * @param string $txtToEnc  text to be encrypted
+     * @param string $txtToEnc text to be encrypted
      *
      * @return string the token that has been generated
      */
@@ -39,7 +41,7 @@ class Token {
         }
     }
 
-        /**
+    /**
      * Fetches the username of the current token.
      *
      * @param string $token user token
@@ -53,5 +55,3 @@ class Token {
         return $user['username'];
     }
 }
-
-?>
