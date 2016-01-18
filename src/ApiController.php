@@ -41,8 +41,8 @@ class ApiController
             //get post variables
             $all_post_vars = $this->app->request->post();
 
-            $username = $all_post_vars['username'];
-            $password = $all_post_vars['password'];
+            $username = urldecode($all_post_vars['username']);
+            $password = urldecode($all_post_vars['password']);
 
             //check if username and password exists in table
             $res = $this->db->users()->where('username = ?', $username)->where('password = ?', $password);
@@ -56,7 +56,7 @@ class ApiController
                 //get current timestamp and use it as seed to generate token
                 $timestamp = $this->get_current_time();
 
-                $textToEncrypt = $username.'-'.$password.'-'.$timestamp;
+                $textToEncrypt = $username . '-' . $password . '-' . $timestamp;
                 $token = Token::generate($textToEncrypt);
 
                 //insert token and time it was generated into database
