@@ -41,8 +41,8 @@ class ApiController
             //get post variables
             $all_post_vars = $this->app->request->post();
 
-            $username = $all_post_vars['username'];
-            $password = $all_post_vars['password'];
+            $username = urldecode($all_post_vars['username']);
+            $password = urldecode($all_post_vars['password']);
 
             //check if username and password exists in table
             $res = $this->db->users()->where('username = ?', $username)->where('password = ?', $password);
