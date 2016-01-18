@@ -56,7 +56,7 @@ class ApiController
                 //get current timestamp and use it as seed to generate token
                 $timestamp = $this->get_current_time();
 
-                $textToEncrypt = $username.'-'.$password.'-'.$timestamp;
+                $textToEncrypt = $username . '-' . $password . '-' . $timestamp;
                 $token = Token::generate($textToEncrypt);
 
                 //insert token and time it was generated into database
