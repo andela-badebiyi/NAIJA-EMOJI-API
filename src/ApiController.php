@@ -8,7 +8,7 @@ use app\authorization\Token;
  * ApiController class that resolves request made to each endpoint of the api
  * Each public method in this class handles the request made to each endpoint in the api
  * and returns a closure.
- * 
+ *
  * @author Adebiyi Bodunde
  */
 class ApiController
@@ -188,16 +188,18 @@ class ApiController
     /**
      * Controller action that processes the request made to the update endpoint via either put or patch.
      *
-     * @return closure outputs a status message 
+     * @return closure outputs a status message
      */
     public function updateEmoji()
     {
         return function ($id) {
-            $this->app->response->headers->set('Content-Type', 'application/json');
+            //$this->app->response->headers->set('Content-Type', 'application/json');
             $token = $this->app->request->headers->get('user-token');
 
             if (Token::isValid($token, $this->db) && $this->user_owns_emoji($token, $id) && $this->emoji_exists($id)) {
                 $all_post_vars = $this->app->request->post();
+                var_dump($all_post_vars);
+
                 $all_post_vars['date_modified'] = $this->get_current_time('Y-m-d H:i:s');
 
                 $emoji = $this->db->emoji('id = ?', $id);
@@ -208,6 +210,7 @@ class ApiController
                     $this->app->response->setStatus(304);
                     echo json_encode(['message' => 'Smiley could not be updated']);
                 }
+              
             } else {
                 $this->app->response->setStatus(401);
                 echo json_encode(['message' => 'At least one of the authentication requirements failed']);
@@ -240,7 +243,7 @@ class ApiController
      *
      * @param  string [$format = null] the format in which the time should be returned in
      *
-     * @return string the time 
+     * @return string the time
      */
     private function get_current_time($format = null)
     {
