@@ -11,14 +11,15 @@
     "autoload": {
 	    "psr-4": {
 	    	"app\\": "src/",
-            "app\\authorization\\": "authorization/",
-	    	"app\\tests\\": "tests/"
+        "app\\auth\\": "src/auth/",
+	    	"app\\tests\\": "tests/",
+				"app\\middleware\\": "middleware/"
     	}
     },
     "repositories": {
-		"packagist": { 
-			"url": "https://packagist.org", 
-			"type": "composer" 
+		"packagist": {
+			"url": "https://packagist.org",
+			"type": "composer"
 		}
 	}
 

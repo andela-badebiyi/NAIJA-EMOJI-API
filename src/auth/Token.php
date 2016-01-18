@@ -1,6 +1,6 @@
 <?php
 
-namespace app\authorization;
+namespace app\auth;
 
 class Token
 {

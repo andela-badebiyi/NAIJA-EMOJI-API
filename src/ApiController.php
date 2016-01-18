@@ -2,7 +2,7 @@
 
 namespace app;
 
-use app\authorization\Token;
+use app\auth\Token;
 
 /**
  * ApiController class that resolves request made to each endpoint of the api
@@ -30,6 +30,38 @@ class ApiController
     }
 
     /**
+     * Controller action that reigisters a new user
+     *
+     * @return closure returns the username and password after creating new user
+     */
+    public function register()
+    {
+      return function () {
+        $this->app->response->headers->set('Content-type', 'application/json');
+        if ($this->userExist(2)) {
+          $this->app->response->setStatus(400);
+          echo json_encode(['message' => 'This username already exists']);
+        }
+        else {
+          $this->app->response->setStatus(200);
+
+          //fetch username and password
+          $all_post_vars = $this->app->request->post();
+
+          //create new record and store in database
+          $user = $this->db->users();
+          $user->insert($all_post_vars);
+
+          //output success message
+          echo json_encode([
+            'message' => 'User has been successfully registered',
+            'user credentionals' => $all_post_vars
+          ]);
+        }
+      };
+    }
+
+    /**
      * Controller action that processes the request made to the login endpoint.
      *
      * @return closure token generated is returned in json format
@@ -37,27 +69,28 @@ class ApiController
     public function authLogin()
     {
         return function () {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            //get post variables
-            $all_post_vars = $this->app->request->post();
-
-            $username = urldecode($all_post_vars['username']);
-            $password = urldecode($all_post_vars['password']);
-
-            //check if username and password exists in table
-            $res = $this->db->users()->where('username = ?', $username)->where('password = ?', $password);
-
-            if (count($res) == 0) {
+          //set headers
+          $this->app->response->headers->set('Content-type', 'application/json');
+          //if user exists log in, return error message if he doesn't
+            if (!$this->userExist()) {
                 $this->app->response->setStatus(401);
                 echo json_encode(['message' => 'Invalid username and/or password']);
             } else {
                 $this->app->response->setStatus(200);
+
+                //get post variables
+                $all_post_vars = $this->app->request->post();
+
+                $username = urldecode($all_post_vars['username']);
+                $password = urldecode($all_post_vars['password']);
 
                 //get current timestamp and use it as seed to generate token
                 $timestamp = $this->get_current_time();
 
                 $textToEncrypt = $username . '-' . $password . '-' . $timestamp;
                 $token = Token::generate($textToEncrypt);
+
+                $res = $this->db->users()->where('username = ?', $username)->where('password = ?', $password);
 
                 //insert token and time it was generated into database
                 $res->update(['token_generated' => $timestamp, 'token' => $token]);
@@ -75,27 +108,19 @@ class ApiController
     public function authLogout()
     {
         return function () {
-            //set the response header content type and retrieve the user token
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            $token = $this->app->request->headers->get('user-token');
+          //fetch token and set http status code
+          $token = $this->app->request->headers->get('user-token');
+          $this->app->response->setStatus(200);
 
-            //check if token is valid and then proceed to process request
-            if (Token::isValid($token, $this->db)) {
-                $this->app->response->setStatus(200);
+          //get token and invalidate it by making it older than a day
+          $user_data = $this->db->users('token = ?', $token)->fetch();
+          $expired_timestamp = intval($user_data['token_generated']) - 86400;
 
-                //get token and invalidate it by making it older than a day
-                $user_data = $this->db->users('token = ?', $token)->fetch();
-                $expired_timestamp = intval($user_data['token_generated']) - 86400;
+          //insert expired token in the users table
+          $user = $this->db->users()->where('token = ?', $token);
+          $user->update(['token_generated' => $expired_timestamp]);
 
-                //insert expired token in the users table
-                $user = $this->db->users()->where('token = ?', $token);
-                $user->update(['token_generated' => $expired_timestamp]);
-
-                echo json_encode(['message' => 'Logged out!']);
-            } else {
-                $this->app->response->setStatus(401);
-                echo json_encode(['message' => 'Invalid Token']);
-            }
+          echo json_encode(['message' => 'Logged out!']);
         };
     }
 
@@ -138,7 +163,7 @@ class ApiController
 
             //if emoji not found return error message else return emoji
             if ($emoji == null) {
-                $this->app->response->setStatus(204);
+                $this->app->response->setStatus(404);
                 echo json_encode(['message' => 'Emoji not found']);
             } else {
                 echo json_encode($emoji);
@@ -154,34 +179,28 @@ class ApiController
     public function createEmoji()
     {
         return function () {
-            //set response header content-type and retrieve user token
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            $token = $this->app->request->headers->get('user-token');
+          //set response header content-type and retrieve user token
+          $this->app->response->headers->set('Content-Type', 'application/json');
+          $token = $this->app->request->headers->get('user-token');
 
-            //initialize the emoji db model
-            $emoji = $this->db->emoji();
+          //initialize the emoji db model
+          $emoji = $this->db->emoji();
 
-            //check if token is valid then proceed or return an error message
-            if (Token::isValid($token, $this->db)) {
-                //get post data and make some additions
-                $all_post_vars = $this->app->request->post();
-                $all_post_vars['date_created'] = $this->get_current_time('Y-m-d H:i:s');
-                $all_post_vars['date_modified'] = $this->get_current_time('Y-m-d H:i:s');
-                $all_post_vars['created_by'] = Token::owner($token, $this->db);
+          //get post data and make some additions
+          $all_post_vars = $this->app->request->post();
+          $all_post_vars['date_created'] = $this->get_current_time('Y-m-d H:i:s');
+          $all_post_vars['date_modified'] = $this->get_current_time('Y-m-d H:i:s');
+          $all_post_vars['created_by'] = Token::owner($token, $this->db);
 
-                //insert record
-                $res = $emoji->insert($all_post_vars);
-                $timestamp = $res['date_created'];
+          //insert record
+          $res = $emoji->insert($all_post_vars);
+          $timestamp = $res['date_created'];
 
-                //return result of this request operation and the inserted emoji
-                echo json_encode([
-                    'message' => 'Emoji successfully added!',
-                    'emoji'   => $emoji->where('date_created = ?', $timestamp)->fetch(),
-                    ]);
-            } else {
-                $this->app->response->setStatus(401);
-                echo json_encode(['message' => 'Invalid Token!']);
-            }
+          //return result of this request operation and the inserted emoji
+          echo json_encode([
+              'message' => 'Emoji successfully added!',
+              'emoji'   => $emoji->where('date_created = ?', $timestamp)->fetch(),
+              ]);
         };
     }
 
@@ -193,28 +212,26 @@ class ApiController
     public function updateEmoji()
     {
         return function ($id) {
-            //$this->app->response->headers->set('Content-Type', 'application/json');
-            $token = $this->app->request->headers->get('user-token');
+          //set headers and get user token
+          $this->app->response->headers->set('Content-Type', 'application/json');
+          $token = $this->app->request->headers->get('user-token');
 
-            if (Token::isValid($token, $this->db) && $this->user_owns_emoji($token, $id) && $this->emoji_exists($id)) {
-                $all_post_vars = $this->app->request->post();
-                var_dump($all_post_vars);
+          //get post variables
+          $all_post_vars = $this->app->request->post();
 
-                $all_post_vars['date_modified'] = $this->get_current_time('Y-m-d H:i:s');
+          //set date modified
+          $all_post_vars['date_modified'] = $this->get_current_time('Y-m-d H:i:s');
 
-                $emoji = $this->db->emoji('id = ?', $id);
+          //fetch record
+          $emoji = $this->db->emoji('id = ?', $id);
 
-                if ($emoji->update($all_post_vars)) {
-                    echo json_encode(['message' => 'Smiley updated successfully']);
-                } else {
-                    $this->app->response->setStatus(304);
-                    echo json_encode(['message' => 'Smiley could not be updated']);
-                }
-              
-            } else {
-                $this->app->response->setStatus(401);
-                echo json_encode(['message' => 'At least one of the authentication requirements failed']);
-            }
+          //update data
+          if ($emoji->update($all_post_vars)) {
+              echo json_encode(['message' => 'Smiley updated successfully']);
+          } else {
+              $this->app->response->setStatus(304);
+              echo json_encode(['message' => 'Smiley could not be updated']);
+          }
         };
     }
 
@@ -226,15 +243,12 @@ class ApiController
     public function deleteEmoji()
     {
         return function ($id) {
+            //set headers
             $this->app->response->headers->set('Content-Type', 'application/json');
-            $token = $this->app->request->headers->get('user-token');
-            if (Token::isValid($token, $this->db) && $this->user_owns_emoji($token, $id) && $this->emoji_exists($id)) {
-                $this->db->emoji('id = ?', $id)->delete();
-                echo json_encode(['message' => 'successfully Deleted!']);
-            } else {
-                $this->app->response->setStatus(401);
-                echo json_encode(['message' => 'Oops something went wrong!']);
-            }
+
+            //fetch emoji and delete from database
+            $this->db->emoji('id = ?', $id)->delete();
+            echo json_encode(['message' => 'successfully Deleted!']);
         };
     }
 
@@ -254,34 +268,29 @@ class ApiController
     }
 
     /**
-     * Checks if the user is the owner of an emoji.
+     * Checks if user credentials exists in database
      *
-     * @param string $token    User token
-     * @param int    $emoji_id the id of the emoji whose ownership we want to confirm
-     *
-     * @return bool returns true if user does own the emoji and false if he doesn't
+     * @return Boolean returns true if user credentials already exist and false if not
      */
-    private function user_owns_emoji($token, $emoji_id)
-    {
-        //fetch username of the current logged in user
-        $user = Token::owner($token, $this->db);
+     private function userExist($option = 1)
+     {
+       //get post variables
+       $all_post_vars = $this->app->request->post();
 
-        //fetch emoji data
-        $emoji = $this->db->emoji('id = ?', $emoji_id)->fetch();
+       $username = urldecode($all_post_vars['username']);
+       $password = urldecode($all_post_vars['password']);
 
-        //check that the username of the logged user is equal to the user that created the emoji
-        return $user == $emoji['created_by'] ? true : false;
-    }
+       if ($option == 1) {
+          $res = $this->db->users()->where('username = ?', $username)->where('password = ?', $password);
+       } else {
+         $res = $this->db->users()->where('username = ?', $username);
+       }
 
-    /**
-     * Check if an emmoji exists.
-     *
-     * @param int $emoji_id id of the emoji whose existence we want to confirm
-     *
-     * @return bool returns true if emoji exists and false if it doesn't
-     */
-    private function emoji_exists($emoji_id)
-    {
-        return $this->db->emoji('id = ?', $emoji_id)->fetch() == null ? false : true;
-    }
+       //check if username and password exists in table
+       if (count($res) == 0) {
+         return false;
+       } else {
+         return true;
+       }
+     }
 }
