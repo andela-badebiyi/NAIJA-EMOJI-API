@@ -4,7 +4,6 @@ namespace app\tests;
 
 use GuzzleHttp\Client;
 
-
 class ApiEndPointsTest extends \PHPUnit_Framework_TestCase
 {
     public $client;
@@ -14,7 +13,6 @@ class ApiEndPointsTest extends \PHPUnit_Framework_TestCase
     {
         $this->client = new Client(['base_url' => 'http://bd-naijaemoji.herokuapp.com/']);
         //$this->client = new Client(['base_url' => 'http://localhost:3000/']);
-
     }
 
     public function testValidConnection()
@@ -25,7 +23,7 @@ class ApiEndPointsTest extends \PHPUnit_Framework_TestCase
 
     public function testRegister()
     {
-      //test with a username that already exists
+        //test with a username that already exists
       $response = $this->client->post('register', [
           'body' => [
                   'username' => 'admin',
@@ -36,7 +34,7 @@ class ApiEndPointsTest extends \PHPUnit_Framework_TestCase
 
       //confirm the error code and the error message
       $this->assertEquals(400, $response->getStatusCode());
-      $this->assertEquals('This username already exists', $response->json()['message']);
+        $this->assertEquals('This username already exists', $response->json()['message']);
 
       //test with a uique username
 
@@ -51,8 +49,7 @@ class ApiEndPointsTest extends \PHPUnit_Framework_TestCase
 
       //confirm the error code and the error message
       $this->assertEquals(200, $response->getStatusCode());
-      $this->assertEquals('User has been successfully registered', $response->json()['message']);
-
+        $this->assertEquals('User has been successfully registered', $response->json()['message']);
     }
 
     public function testAuthLogin()
@@ -127,7 +124,7 @@ class ApiEndPointsTest extends \PHPUnit_Framework_TestCase
     {
         //fetch an emoji that isnt in the database
         $response = $this->client->get('emojis/30000', [
-          'exceptions' => false
+          'exceptions' => false,
         ]);
         $this->assertEquals(404, $response->getStatusCode());
 
@@ -279,12 +276,13 @@ class ApiEndPointsTest extends \PHPUnit_Framework_TestCase
 
     private function randomText($length = 10)
     {
-      $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      $charactersLength = strlen($characters);
-      $randomString = '';
-      for ($i = 0; $i < $length; $i++) {
-          $randomString .= $characters[rand(0, $charactersLength - 1)];
-      }
-      return $randomString;
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+
+        return $randomString;
     }
 }
