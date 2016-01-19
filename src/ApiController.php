@@ -225,8 +225,8 @@ class ApiController
           if ($emoji->update($this->app->request->post())) {
               echo json_encode(['message' => 'Smiley updated successfully']);
           } else {
-              //$this->app->response->setStatus(304);
-              var_dump($this->app->request->post());
+              $this->app->response->setStatus(304);
+              echo json_encode(['message' => 'Failed to update']);
           }
         };
     }
