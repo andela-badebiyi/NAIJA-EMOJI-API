@@ -214,18 +214,15 @@ class ApiController
           //set headers and get user token
           $this->app->response->headers->set('Content-Type', 'application/json');
           $token = $this->app->request->headers->get('user-token');
-
-          //get post variables
-          $all_post_vars = $this->app->request->post();
-
-          //set date modified
-          $all_post_vars['date_modified'] = $this->get_current_time('Y-m-d H:i:s');
-
+          
           //fetch record
           $emoji = $this->db->emoji('id = ?', $id);
 
+          //set date modified
+          $emoji->update(['date_modified' => $this->get_current_time('Y-m-d H:i:s')]);
+
           //update data
-          if ($emoji->update($all_post_vars)) {
+          if ($emoji->update($this->app->request->post())) {
               echo json_encode(['message' => 'Smiley updated successfully']);
           } else {
               $this->app->response->setStatus(304);
