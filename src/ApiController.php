@@ -214,7 +214,7 @@ class ApiController
           //set headers and get user token
           $this->app->response->headers->set('Content-Type', 'application/json');
           $token = $this->app->request->headers->get('user-token');
-          
+
           //fetch record
           $emoji = $this->db->emoji('id = ?', $id);
 
