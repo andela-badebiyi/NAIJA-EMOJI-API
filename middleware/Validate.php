@@ -1,92 +1,92 @@
 <?php
+
 namespace app\middleware;
 
 use app\auth\Token;
 
 class Validate extends \Slim\Middleware
 {
-  private $db;
+    private $db;
 
-  public function __construct($db)
-  {
-      $this->db = $db;
-  }
+    public function __construct($db)
+    {
+        $this->db = $db;
+    }
 
-  public function call()
-  {
-    $app = $this->app;
-    $url = $app->request()->getResourceUri();
+    public function call()
+    {
+        $app = $this->app;
+        $url = $app->request()->getResourceUri();
 
     //do not perform any authentication for this routes
     if ($this->noAuth($url, $app)) {
         $this->next->call();
     } else {
-      $token = $app->request->headers->get('user-token');
-      $app->response->headers->set('Content-Type', 'application/json');
+        $token = $app->request->headers->get('user-token');
+        $app->response->headers->set('Content-Type', 'application/json');
 
       //authentication for logout and create endpoint
-      if ( $this->isLogoutOrCreate($url, $app) ){
-        //set the response header content type and retrieve the user token
+      if ($this->isLogoutOrCreate($url, $app)) {
+          //set the response header content type and retrieve the user token
         if (!Token::isValid($token, $this->db)) {
-          $app->response->setStatus(401);
-          echo json_encode(['message' => 'Invalid Token']);
+            $app->response->setStatus(401);
+            echo json_encode(['message' => 'Invalid Token']);
         } else {
-          $this->next->call();
+            $this->next->call();
         }
       }
 
       //authentication for update and delete endpoint
-      if( $this->isUpdateOrDelete($app) ){
-        $id = $this->getId($app);
-        if(
+      if ($this->isUpdateOrDelete($app)) {
+          $id = $this->getId($app);
+          if (
         Token::isValid($token, $this->db)
         && $this->user_owns_emoji($token, $id)
-        && $this->emoji_exists($id) ){
-          $this->next->call();
-        } else {
-          $this->app->response->setStatus(401);
-          echo json_encode(['message' => 'At least one of the authentication requirements failed']);
-        }
-
+        && $this->emoji_exists($id)) {
+              $this->next->call();
+          } else {
+              $this->app->response->setStatus(401);
+              echo json_encode(['message' => 'At least one of the authentication requirements failed']);
+          }
       }
     }
-  }
-
-  private function noAuth($url, $app)
-  {
-    if ($url == '/auth/login' || $url == '/register') {
-      return true;
-    } else if ($url == '/emojis' && strtolower($app->request->getMethod()) == 'get' ) {
-      return true;
-    } else if (strpos($url,'/emojis/') !== false&& strtolower($app->request->getMethod()) == 'get'){
-      return true;
-    } else {
-      return false;
     }
-  }
 
-  private function isLogoutOrCreate($url, $app)
-  {
-    if ($url == '/auth/logout') {
-      return true;
-    } elseif($url == '/emojis' && strtolower($app->request->getMethod()) == 'post' ) {
-      return true;
-    } else {
-      return false;
+    private function noAuth($url, $app)
+    {
+        if ($url == '/auth/login' || $url == '/register') {
+            return true;
+        } elseif ($url == '/emojis' && strtolower($app->request->getMethod()) == 'get') {
+            return true;
+        } elseif (strpos($url, '/emojis/') !== false && strtolower($app->request->getMethod()) == 'get') {
+            return true;
+        } else {
+            return false;
+        }
     }
-  }
 
-  private function isUpdateOrDelete($app)
-  {
-    if (
+    private function isLogoutOrCreate($url, $app)
+    {
+        if ($url == '/auth/logout') {
+            return true;
+        } elseif ($url == '/emojis' && strtolower($app->request->getMethod()) == 'post') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private function isUpdateOrDelete($app)
+    {
+        if (
     strtolower($app->request->getMethod()) == 'put' ||
     strtolower($app->request->getMethod()) == 'patch' ||
-    strtolower($app->request->getMethod()) == 'delete'){
-      return true;
-    } else {
-      return false;
+    strtolower($app->request->getMethod()) == 'delete') {
+            return true;
+        } else {
+            return false;
+        }
     }
-  }
 
   /**
    * Checks if the user is the owner of an emoji.
@@ -120,11 +120,10 @@ class Validate extends \Slim\Middleware
       return $this->db->emoji('id = ?', $emoji_id)->fetch() == null ? false : true;
   }
 
-  private function getId($app)
-  {
-    $result = explode("/", $app->request->getResourceUri());
-    return $result[count($result) - 1];
-  }
+    private function getId($app)
+    {
+        $result = explode('/', $app->request->getResourceUri());
 
+        return $result[count($result) - 1];
+    }
 }
-?>

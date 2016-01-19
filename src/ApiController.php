@@ -30,32 +30,31 @@ class ApiController
     }
 
     /**
-     * Controller action that reigisters a new user
+     * Controller action that reigisters a new user.
      *
      * @return closure returns the username and password after creating new user
      */
     public function register()
     {
-      return function () {
+        return function () {
         $this->app->response->headers->set('Content-type', 'application/json');
         if ($this->userExist(2)) {
-          $this->app->response->setStatus(400);
-          echo json_encode(['message' => 'This username already exists']);
-        }
-        else {
-          $this->app->response->setStatus(200);
+            $this->app->response->setStatus(400);
+            echo json_encode(['message' => 'This username already exists']);
+        } else {
+            $this->app->response->setStatus(200);
 
           //fetch username and password
           $all_post_vars = $this->app->request->post();
 
           //create new record and store in database
           $user = $this->db->users();
-          $user->insert($all_post_vars);
+            $user->insert($all_post_vars);
 
           //output success message
           echo json_encode([
-            'message' => 'User has been successfully registered',
-            'user credentionals' => $all_post_vars
+            'message'            => 'User has been successfully registered',
+            'user credentionals' => $all_post_vars,
           ]);
         }
       };
@@ -87,7 +86,7 @@ class ApiController
                 //get current timestamp and use it as seed to generate token
                 $timestamp = $this->get_current_time();
 
-                $textToEncrypt = $username . '-' . $password . '-' . $timestamp;
+                $textToEncrypt = $username.'-'.$password.'-'.$timestamp;
                 $token = Token::generate($textToEncrypt);
 
                 $res = $this->db->users()->where('username = ?', $username)->where('password = ?', $password);
@@ -267,30 +266,30 @@ class ApiController
         return $result;
     }
 
-    /**
-     * Checks if user credentials exists in database
-     *
-     * @return Boolean returns true if user credentials already exist and false if not
-     */
+     /**
+      * Checks if user credentials exists in database.
+      *
+      * @return bool returns true if user credentials already exist and false if not
+      */
      private function userExist($option = 1)
      {
-       //get post variables
+         //get post variables
        $all_post_vars = $this->app->request->post();
 
-       $username = urldecode($all_post_vars['username']);
-       $password = urldecode($all_post_vars['password']);
+         $username = urldecode($all_post_vars['username']);
+         $password = urldecode($all_post_vars['password']);
 
-       if ($option == 1) {
-          $res = $this->db->users()->where('username = ?', $username)->where('password = ?', $password);
-       } else {
-         $res = $this->db->users()->where('username = ?', $username);
-       }
+         if ($option == 1) {
+             $res = $this->db->users()->where('username = ?', $username)->where('password = ?', $password);
+         } else {
+             $res = $this->db->users()->where('username = ?', $username);
+         }
 
        //check if username and password exists in table
        if (count($res) == 0) {
-         return false;
+           return false;
        } else {
-         return true;
+           return true;
        }
      }
 }
