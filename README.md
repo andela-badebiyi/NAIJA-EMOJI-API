@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/andela-badebiyi/checkpoint-3.svg?branch=develop)](https://travis-ci.org/andela-badebiyi/checkpoint-3)
 <a href="https://styleci.io/repos/49193992"><img src="https://styleci.io/repos/49193992/shield" alt="StyleCI"></a>
 
-# Checkpoint-3 (Naija Emoji API)
+# NAIJA EMOJI API
 ##Summary
 This project is a simple restful Naija Emoji api where authenticated users can fetch, create, delete and update emojis. This api makes use of a token based authentication system.
 
