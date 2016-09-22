@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/andela-badebiyi/checkpoint-3.svg?branch=develop)](https://travis-ci.org/andela-badebiyi/checkpoint-3)
 <a href="https://styleci.io/repos/49193992"><img src="https://styleci.io/repos/49193992/shield" alt="StyleCI"></a>
 
 # NAIJA EMOJI API
